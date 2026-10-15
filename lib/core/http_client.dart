@@ -61,8 +61,26 @@ class ApiClient {
     throw switch (code) {
       404 => NotFoundFailure(message),
       409 => ConflictFailure(message),
+      422 => ValidationFailure(_validationFields(json)),
+      >= 500 && <= 599 => ServerFailure(code),
       _ => UnexpectedFailure(code, message),
     };
+  }
+
+  //Arma el mapa campo -> mensaje del 422: por cada elemento de detail usa loc[1] y msg.
+  //Los elementos que no tengan esa forma se ignoran en lugar de romper.
+  Map<String, String> _validationFields(dynamic json) {
+    final fields = <String, String>{};
+    if (json is! Map || json['detail'] is! List) return fields;
+    for (final item in json['detail'] as List) {
+      if (item is! Map) continue;
+      final loc = item['loc'];
+      final msg = item['msg'];
+      if (loc is List && loc.length > 1 && msg != null) {
+        fields['${loc[1]}'] = '$msg';
+      }
+    }
+    return fields;
   }
 
   //Extrae el texto de "detail" solo si el cuerpo es un Map y detail es String.
