@@ -112,6 +112,20 @@ void main() {
         ),
       );
     });
+
+    test('300 no es éxito y lanza UnexpectedFailure con statusCode 300', () {
+      final mock = MockClient((request) async {
+        return http.Response(jsonEncode({'detail': 'Multiple Choices'}), 300);
+      });
+      final api = ApiClient(client: mock, baseUrl: baseUrl);
+
+      expect(
+        api.get('/orders'),
+        throwsA(
+          isA<UnexpectedFailure>().having((f) => f.statusCode, 'statusCode', 300),
+        ),
+      );
+    });
   });
 
   group('ApiClient · fallos de conexión', () {
